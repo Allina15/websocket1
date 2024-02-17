@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+</head>
+<body>
+<h1>WebSocket Chat</h1>
+<div id="chatMessages"></div>
+<form id="messageForm">
+    <label for="sender"></label><input type="text" id="sender" placeholder="Your Name" required>
+    <label for="content"></label><input type="text" id="content" placeholder="Type your message..." required>
+    <button type="button" onclick="sendMessage()">Send</button>
+</form>
+
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="/webjars/stomp-websocket/sockjs.min.js"></script>
+<script src="/webjars/stomp-websocket/stomp.min.js"></script>
+<script th:inline="javascript">
+    let stompClient = null;
+
+    class SockJS {
+        constructor(s) {
+
+        }
+
+    }
+
+    function connect() {
+        const socket = new SockJS('/chat');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            stompClient.subscribe('/topic/messages', function (response) {
+                showMessage(JSON.parse(response.body));
+            });
+        });
+    }
+
+    function disconnect() {
+        if (stompClient !== null) {
+            stompClient.disconnect();
+        }
+    }
+
+    function sendMessage() {
+        const sender = document.getElementById('sender').value;
+        const content = document.getElementById('content').value;
+
+        stompClient.send('/app/chat', {}, JSON.stringify({
+            'sender': sender,
+            'content': content
+        }));
+
+        document.getElementById('content').value = '';
+    }
+
+    function showMessage(message) {
+        let chatMessagesDiv = document.getElementById('chatMessages');
+        chatMessagesDiv.innerHTML += '<p>' + message.sender + ': ' + message.content + '</p>';
+    }
+
+    connect();
+</script>
+</body>
+</html>
